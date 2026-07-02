@@ -183,6 +183,25 @@ sequenceDiagram
     BusinessLogic-->>API: HTTP 201 Created
     API-->>User: Review Created
 ```
+### 2.4 Fetching a List of Places Flow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant API
+    participant BusinessLogic as Business Logic
+    participant Database
+
+    User->>API: GET /places?criteria=...
+    API->>BusinessLogic: fetch_places(criteria)
+    BusinessLogic->>Database: query_places(criteria)
+    Database-->>BusinessLogic: List of Places Data
+    BusinessLogic-->>API: HTTP 200 OK (Places List)
+    API-->>User: Return List of Places
+```
 
 ### Diagram Explanation
-This diagram outlines the process of a user leaving a review for a specific place. Similar to the Place Creation flow, the system enforces data integrity by confirming that the target `place_id` exists in the Database before the review data is saved. This ensures that no reviews are attached to non-existent properties.
+This sequence illustrates how a user retrieves a list of places based on specific search criteria (e.g., location, price, amenities). The request flows from the User through the API to the Business Logic, which queries the Database. The Database returns the matching records, which are then formatted and sent back to the User along with a successful HTTP 200 OK response.
+Message Types (UML):
+ Synchronous Message (⁠->>⁠): Represents the request flowing downward (from User to Database) to fetch the data based on the provided parameters.
+ Return Message (⁠-->>⁠): Represents the data payload (the list of places) traveling back up the layers to be presented to the user.
