@@ -14,6 +14,11 @@ classDiagram
         +ServiceAPI
     }
 
+    class Facade {
+        <<Pattern>>
+        +HBnBFacade
+    }
+
     class BusinessLogicLayer {
         <<Layer>>
         +Models (User, Place, Review, Amenity)
@@ -24,30 +29,23 @@ classDiagram
         +DatabaseAccess
     }
 
-    class Facade {
-        <<Pattern>>
-        +HBnBFacade
-    }
-
     PresentationLayer ..> Facade : depends on (Dependency)
-    Facade --> BusinessLogicLayer : manages (Directed Association)
-    Facade --> PersistenceLayer : uses (Directed Association)
+    Facade --> BusinessLogicLayer : delegates to (Directed Association)
+    BusinessLogicLayer --> PersistenceLayer : uses (Directed Association)
 ```
 ### Diagram Explanation
-This High-Level Package Diagram illustrates the 3-tier architecture of the HBnB application. It visualizes how the system is divided into distinct layers, each handling a specific responsibility, and how they communicate seamlessly through the Facade pattern.
+This High-Level Package Diagram illustrates the strict 3-tier architecture of the HBnB application. It visualizes a linear flow where each layer only communicates with the layer directly beneath it, ensuring strict separation of concerns.
 
-**System Components:**
-1. **Presentation Layer (Services/API):** The entry point of the application. It handles user requests and returns responses (HTTP protocol).
-2. **Business Logic Layer (Models):** The core of the application. It contains all the Python classes (`User`, `Place`, etc.) and enforces the business rules.
-3. **Persistence Layer:** Responsible for data storage (`FileStorage` or `DBStorage`).
-4. **Facade:** Acts as a centralized manager. Instead of the API interacting with models or databases directly, it goes through the Facade, keeping the architecture clean and decoupled.
+**System Components & Flow:**
+1. **Presentation Layer (Services/API):** The entry point of the application. It handles user requests (HTTP protocol) and passes them to the Facade.
+2. **Facade:** Acts as a centralized manager for the API. It receives the request and delegates it to the appropriate business logic.
+3. **Business Logic Layer (Models):** The core of the application containing Python classes (`User`, `Place`, etc.). It processes the rules and then interacts with the persistence layer.
+4. **Persistence Layer:** Responsible for actual data storage (`FileStorage` or `DBStorage`).
 
 **Relationship Types (UML):**
-* **Dependency (`..>`) between Presentation Layer and Facade:**
-  The Presentation layer has a Dependency relationship with the Facade. This means the API heavily relies on the Facade to function. If the Facade structure changes, the API must adapt.
-* **Directed Association (`-->`) between Facade and Business Logic / Persistence:**
-  The Facade has a Directed Association with the lower layers. This means the Facade knows about the Models and the Database and actively calls their methods to execute tasks. However, it is directed (one-way), meaning the Models and Database are completely unaware of the Facade's existence.
-
+* **Dependency (`..>`) [Presentation -> Facade]:** The API heavily relies on the Facade to function.
+* **Directed Association (`-->`) [Facade -> Business Logic]:** The Facade directs commands to the logic layer without needing to know database details.
+* **Directed Association (`-->`) [Business Logic -> Persistence]:** The logic layer actively calls the database methods to save or retrieve data.
 ---
 
 ## Task 1: Core Models & Business Logic (Class Diagram)
@@ -88,10 +86,10 @@ class Amenity {
   +name : string
 }
 
-BaseModel <|-- User
-BaseModel <|-- Place
-BaseModel <|-- Review
-BaseModel <|-- Amenity
+BaseModel <|-- User : inherits from (Inheritance)
+BaseModel <|-- Place : inherits from (Inheritance)
+BaseModel <|-- Review : inherits from (Inheritance)
+BaseModel <|-- Amenity : inherits from (Inheritance)
 
 User "1" --> "*" Place : owns
 User "1" --> "*" Review : writes
