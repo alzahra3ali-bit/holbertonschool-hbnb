@@ -25,21 +25,20 @@ classDiagram
         +DatabaseAccess
     }
 
-    PresentationLayer --> BusinessLogicLayer : uses (Directed Association)
+    PresentationLayer ..> BusinessLogicLayer : uses (Dependency)
     BusinessLogicLayer --> PersistenceLayer : uses (Directed Association)
 ```
 ### Diagram Explanation
 This High-Level Package Diagram illustrates the strict 3-tier architecture of the HBnB application. It visualizes a linear flow where each layer only communicates with the layer directly beneath it, ensuring strict separation of concerns. The Facade is the entry point inside the Business Logic Layer, exposed to the Presentation Layer so that layer never has to know about individual model classes.
 
 **System Components & Flow:**
-1. **Presentation Layer (Services/API):** The entry point of the application. It handles user requests (HTTP protocol) and calls into the Business Logic Layer through its exposed Facade interface — it never talks to `User`, `Place`, etc. directly.
+1. **Presentation Layer (Services/API):** The entry point of the application. It handles user requests (HTTP protocol) and calls into the Business Logic Layer through its exposed Facade interface.
 2. **Business Logic Layer (Models + Facade):** The core of the application. The `HBnBFacade` class lives inside this layer and acts as its single point of contact, receiving calls from the Presentation Layer and routing them internally to the appropriate Python classes (`User`, `Place`, `Review`, `Amenity`), which enforce the business rules.
-3. **Persistence Layer:** Responsible for actual data storage (`FileStorage` or `DBStorage`), accessed only by the Business Logic Layer.
+3. **Persistence Layer:** Responsible for actual data storage, accessed only by the Business Logic Layer.
 
 **Relationship Types (UML):**
-* **Dependency (`..>`) [Presentation -> Facade]:** The API heavily relies on the Facade to function.
-* **Directed Association (`-->`) [Facade -> Business Logic]:** The Facade directs commands to the logic layer without needing to know database details.
-* **Directed Association (`-->`) [Business Logic -> Persistence]:** The logic layer actively calls the database methods to save or retrieve data.
+* **Dependency (`..>`) [Presentation -> Business Logic]:** The Presentation Layer only *uses* the Facade's interface at call-time to invoke an operation. It is not structurally coupled to its internals, which is why it's a dependency rather than an association.
+* **Directed Association (`-->`) [Business Logic -> Persistence]:** The Business Logic Layer holds an ongoing, structural reference to the database access object and repeatedly calls it to save or retrieve data over the object's lifetime. This is a stronger, structural relationship than a dependency, which is why it's an association.
 ---
 
 ## Task 1: Core Models & Business Logic (Class Diagram)
@@ -63,6 +62,7 @@ class User {
   +is_admin : bool
   +register()
   +update_profile(data : dict)
+  +list()
 }
 
 class Place {
@@ -71,6 +71,7 @@ class Place {
   +price : float
   +latitude : float
   +longitude : float
+  +owner_id : UUID
   +create()
   +update(data : dict)
   +list()
@@ -81,9 +82,11 @@ class Place {
 class Review {
   +text : string
   +rating : int
+  +user_id : UUID
+  +place_id : UUID
   +create()
   +update(data : dict)
-  +list_by_place(place : Place)
+  +list_by_place(place_id : UUID)
 }
 
 class Amenity {
@@ -111,9 +114,9 @@ This Class Diagram represents the core business models (entities) of the HBnB ap
 **Core Components:**
 1. **`BaseModel`:** The parent class for all entities. It handles the initialization of common attributes required across the system: a unique `id` (`UUID`), and `created_at` / `updated_at` timestamps (`datetime`) used for audit purposes. It also defines the common `save()` and `delete()` methods, which every entity inherits rather than redefines.
 2. **Entity Models:** `User`, `Place`, `Review`, and `Amenity` each define their own specific properties (e.g., `email`, `price`, `rating`) plus the CRUD-style behaviors required by the business rules:
-   * **`User`** — `register()` to create a new account, and `update_profile()` to modify existing user data. `delete()` is inherited from `BaseModel`.
-   * **`Place`** — `create()`, `update()`, and `list()`, satisfying the "created, updated, deleted, and listed" requirement. `add_amenity()` and `list_amenities()` represent the explicit requirement that places manage a list of associated amenities.
-   * **`Review`** — `create()` and `update()`, plus `list_by_place(place : Place)`, since reviews must specifically be "listed by place" rather than listed globally. The method takes the related `Place` object itself, keeping it consistent with `add_amenity(amenity : Amenity)`.
+   * **`User`** — `register()` to create a new account, `update_profile()` to modify existing user data, and `list()` to satisfy the "created, updated, deleted, and listed" requirement uniformly across all four entities. `delete()` is inherited from `BaseModel`.
+   * **`Place`** — `create()`, `update()`, and `list()`, satisfying the "created, updated, deleted, and listed" requirement. `add_amenity()` and `list_amenities()` represent the explicit requirement that places manage a list of associated amenities. `owner_id` is an explicit foreign key attribute, referencing the `id` of the `User` who owns the place.
+   * **`Review`** — `create()` and `update()`, plus `list_by_place(place_id : UUID)`, since reviews must specifically be "listed by place" rather than listed globally. The method takes the `place_id` foreign key. `user_id` and `place_id` are explicit foreign key attributes, referencing the `User` who wrote the review and the `Place` it belongs to.
    * **`Amenity`** — `create()`, `update()`, and `list()`, matching the "created, updated, deleted, and listed" requirement.
 
 **Relationship Types (UML):**
@@ -123,9 +126,9 @@ This Class Diagram represents the core business models (entities) of the HBnB ap
   * A `User` can own multiple `Places` (owns).
   * A `User` can write multiple `Reviews` (writes).
   * A `Place` can have multiple `Reviews` (has).
-  * These associations are what represent the link between a `Review` and its `Place`/`User`, the relationship expresses that link at the conceptual (Business Logic) level.
+  * These associations represent the conceptual link between a `Review` and its `Place`/`User` at the diagram level, while the `_id` foreign key attributes are the concrete fields that implement that link and that the Persistence Layer queries against.
 * **Aggregation (`o--`):**
-  A `Place` can include multiple `Amenities`, and an `Amenity` (like Wi-Fi or Pool) can belong to multiple `Places` (includes). This is modeled as aggregation because an `Amenity` can exist and be managed (created, updated, listed) independently of any single `Place`'s lifecycle.
+  A `Place` can include multiple `Amenities`, and an `Amenity` can belong to multiple `Places` (includes). This is modeled as aggregation because an `Amenity` can exist and be managed (created, updated, listed) independently of any single `Place`'s lifecycle.
 ---
 
 ## Task 2: System Workflows (Sequence Diagrams)
@@ -174,7 +177,7 @@ sequenceDiagram
 ```
 
 ### Diagram Explanation
-This sequence illustrates the creation of a new property (Place) listing. Before allowing the creation to proceed, the Business Logic Layer actively queries the Database to verify that the `owner_id` provided in the request corresponds to a valid, existing User, to assert business rule that every Place is associated with the User who created it. Once validated, the new Place is successfully saved.
+This sequence illustrates the creation of a new property (Place) listing. Before allowing the creation to proceed, the Business Logic Layer actively queries the Database to verify that the `owner_id` provided in the request corresponds to a valid, existing User, to assert the business rule that every Place is associated with the User who created it. Once validated, the new Place is successfully saved.
 
 ---
 
@@ -200,7 +203,7 @@ sequenceDiagram
 ```
 
 ### Diagram Explanation
-This sequence illustrates the submission of a new review. Because the business rules state that each review is associated with both a specific `Place` **and** a specific `User`, the Business Logic Layer validates both relationships against the Database — first confirming the reviewing `User` exists, then confirming the target `Place` exists — before the review is persisted. Only once both checks succeed is the review saved and a `HTTP 201 Created` response returned.
+This sequence illustrates the submission of a new review. Because the business rules state that each review is associated with both a specific `Place` **and** a specific `User`, the Business Logic Layer validates both relationships against the Database, first confirming the reviewing `User` exists, then confirming the target `Place` exists before the review is persisted. Only once both checks succeed is the review saved and a `HTTP 201 Created` response returned.
 
 ---
 
