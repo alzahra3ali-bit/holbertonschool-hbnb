@@ -14,13 +14,9 @@ classDiagram
         +ServiceAPI
     }
 
-    class Facade {
-        <<Pattern>>
-        +HBnBFacade
-    }
-
     class BusinessLogicLayer {
         <<Layer>>
+        +HBnBFacade
         +Models (User, Place, Review, Amenity)
     }
 
@@ -29,18 +25,16 @@ classDiagram
         +DatabaseAccess
     }
 
-    PresentationLayer ..> Facade : depends on (Dependency)
-    Facade --> BusinessLogicLayer : delegates to (Directed Association)
+    PresentationLayer --> BusinessLogicLayer : uses (Directed Association)
     BusinessLogicLayer --> PersistenceLayer : uses (Directed Association)
 ```
 ### Diagram Explanation
-This High-Level Package Diagram illustrates the strict 3-tier architecture of the HBnB application. It visualizes a linear flow where each layer only communicates with the layer directly beneath it, ensuring strict separation of concerns.
+This High-Level Package Diagram illustrates the strict 3-tier architecture of the HBnB application. It visualizes a linear flow where each layer only communicates with the layer directly beneath it, ensuring strict separation of concerns. The Facade is the entry point inside the Business Logic Layer, exposed to the Presentation Layer so that layer never has to know about individual model classes.
 
 **System Components & Flow:**
-1. **Presentation Layer (Services/API):** The entry point of the application. It handles user requests (HTTP protocol) and passes them to the Facade.
-2. **Facade:** Acts as a centralized manager for the API. It receives the request and delegates it to the appropriate business logic.
-3. **Business Logic Layer (Models):** The core of the application containing Python classes (`User`, `Place`, etc.). It processes the rules and then interacts with the persistence layer.
-4. **Persistence Layer:** Responsible for actual data storage (`FileStorage` or `DBStorage`).
+1. **Presentation Layer (Services/API):** The entry point of the application. It handles user requests (HTTP protocol) and calls into the Business Logic Layer through its exposed Facade interface — it never talks to `User`, `Place`, etc. directly.
+2. **Business Logic Layer (Models + Facade):** The core of the application. The `HBnBFacade` class lives inside this layer and acts as its single point of contact, receiving calls from the Presentation Layer and routing them internally to the appropriate Python classes (`User`, `Place`, `Review`, `Amenity`), which enforce the business rules.
+3. **Persistence Layer:** Responsible for actual data storage (`FileStorage` or `DBStorage`), accessed only by the Business Logic Layer.
 
 **Relationship Types (UML):**
 * **Dependency (`..>`) [Presentation -> Facade]:** The API heavily relies on the Facade to function.
@@ -54,9 +48,9 @@ This High-Level Package Diagram illustrates the strict 3-tier architecture of th
 classDiagram
 
 class BaseModel {
-  +id : string
-  +created_at : string
-  +updated_at : string
+  +id : UUID
+  +created_at : datetime
+  +updated_at : datetime
   +save()
   +delete()
 }
@@ -67,6 +61,8 @@ class User {
   +email : string
   +password : string
   +is_admin : bool
+  +register()
+  +update_profile(data : dict)
 }
 
 class Place {
@@ -75,15 +71,27 @@ class Place {
   +price : float
   +latitude : float
   +longitude : float
+  +create()
+  +update(data : dict)
+  +list()
+  +add_amenity(amenity : Amenity)
+  +list_amenities()
 }
 
 class Review {
   +text : string
   +rating : int
+  +create()
+  +update(data : dict)
+  +list_by_place(place : Place)
 }
 
 class Amenity {
   +name : string
+  +description : string
+  +create()
+  +update(data : dict)
+  +list()
 }
 
 BaseModel <|-- User : inherits from (Inheritance)
@@ -94,14 +102,19 @@ BaseModel <|-- Amenity : inherits from (Inheritance)
 User "1" --> "*" Place : owns
 User "1" --> "*" Review : writes
 Place "1" --> "*" Review : has
-Place "*" -- "*" Amenity : includes
+Place "*" o-- "*" Amenity : includes
 ```
+
 ### Diagram Explanation
 This Class Diagram represents the core business models (entities) of the HBnB application and illustrates their attributes, methods, and relationships.
 
 **Core Components:**
-1. **`BaseModel`:** The parent class for all entities. It handles the initialization of common attributes such as a unique `id` (UUID), `created_at`, and `updated_at` timestamps, as well as common methods like `save()` and `delete()`.
-2. **Entity Models:** Classes like `User`, `Place`, `Review`, and `Amenity` define the specific properties (e.g., `email`, `price`, `rating`) required for each object.
+1. **`BaseModel`:** The parent class for all entities. It handles the initialization of common attributes required across the system: a unique `id` (`UUID`), and `created_at` / `updated_at` timestamps (`datetime`) used for audit purposes. It also defines the common `save()` and `delete()` methods, which every entity inherits rather than redefines.
+2. **Entity Models:** `User`, `Place`, `Review`, and `Amenity` each define their own specific properties (e.g., `email`, `price`, `rating`) plus the CRUD-style behaviors required by the business rules:
+   * **`User`** — `register()` to create a new account, and `update_profile()` to modify existing user data. `delete()` is inherited from `BaseModel`.
+   * **`Place`** — `create()`, `update()`, and `list()`, satisfying the "created, updated, deleted, and listed" requirement. `add_amenity()` and `list_amenities()` represent the explicit requirement that places manage a list of associated amenities.
+   * **`Review`** — `create()` and `update()`, plus `list_by_place(place : Place)`, since reviews must specifically be "listed by place" rather than listed globally. The method takes the related `Place` object itself, keeping it consistent with `add_amenity(amenity : Amenity)`.
+   * **`Amenity`** — `create()`, `update()`, and `list()`, matching the "created, updated, deleted, and listed" requirement.
 
 **Relationship Types (UML):**
 * **Inheritance (`<|--`):**
@@ -110,9 +123,9 @@ This Class Diagram represents the core business models (entities) of the HBnB ap
   * A `User` can own multiple `Places` (owns).
   * A `User` can write multiple `Reviews` (writes).
   * A `Place` can have multiple `Reviews` (has).
-* **Many-to-Many Association (`* -- *`):**
-  A `Place` can include multiple `Amenities`, and an `Amenity` (like Wi-Fi or Pool) can belong to multiple `Places` (includes).
-
+  * These associations are what represent the link between a `Review` and its `Place`/`User`, the relationship expresses that link at the conceptual (Business Logic) level.
+* **Aggregation (`o--`):**
+  A `Place` can include multiple `Amenities`, and an `Amenity` (like Wi-Fi or Pool) can belong to multiple `Places` (includes). This is modeled as aggregation because an `Amenity` can exist and be managed (created, updated, listed) independently of any single `Place`'s lifecycle.
 ---
 
 ## Task 2: System Workflows (Sequence Diagrams)
@@ -123,7 +136,7 @@ This Class Diagram represents the core business models (entities) of the HBnB ap
 sequenceDiagram
     actor User
     participant API
-    participant BusinessLogic as Business Logic
+    participant BusinessLogic as Business Logic Layer (Facade)
     participant Database
 
     User->>API: POST /users
@@ -137,7 +150,7 @@ sequenceDiagram
 ```
 
 ### Diagram Explanation
-This Sequence Diagram maps out the step-by-step process of a new user registration. It highlights the interaction between the User, the API interface, the Business Logic layer, and the Database. The flow ensures data validation (checking if the email already exists) before persisting the new user record and returning a successful HTTP 201 Created response.
+This Sequence Diagram maps out the step-by-step process of a new user registration. It highlights the interaction between the User, the API interface, the Business Logic Layer (accessed through its Facade), and the Database. The flow ensures data validation (checking if the email already exists) before persisting the new user record and returning a successful HTTP 201 Created response.
 
 ---
 
@@ -147,7 +160,7 @@ This Sequence Diagram maps out the step-by-step process of a new user registrati
 sequenceDiagram
     actor User
     participant API
-    participant BusinessLogic as Business Logic
+    participant BusinessLogic as Business Logic Layer (Facade)
     participant Database
 
     User->>API: POST /places
@@ -161,7 +174,7 @@ sequenceDiagram
 ```
 
 ### Diagram Explanation
-This sequence illustrates the creation of a new property (Place) listing. Before allowing the creation to proceed, the Business Logic layer actively queries the Database to verify that the `owner_id` provided in the request corresponds to a valid, existing User. Once validated, the new Place is successfully saved.
+This sequence illustrates the creation of a new property (Place) listing. Before allowing the creation to proceed, the Business Logic Layer actively queries the Database to verify that the `owner_id` provided in the request corresponds to a valid, existing User, to assert business rule that every Place is associated with the User who created it. Once validated, the new Place is successfully saved.
 
 ---
 
@@ -171,11 +184,13 @@ This sequence illustrates the creation of a new property (Place) listing. Before
 sequenceDiagram
     actor User
     participant API
-    participant BusinessLogic as Business Logic
+    participant BusinessLogic as Business Logic Layer (Facade)
     participant Database
 
     User->>API: POST /reviews
     API->>BusinessLogic: create_review(data)
+    BusinessLogic->>Database: get_user_by_id(user_id)
+    Database-->>BusinessLogic: User Found
     BusinessLogic->>Database: get_place_by_id(place_id)
     Database-->>BusinessLogic: Place Found
     BusinessLogic->>Database: save_review(data)
@@ -183,13 +198,19 @@ sequenceDiagram
     BusinessLogic-->>API: HTTP 201 Created
     API-->>User: Review Created
 ```
+
+### Diagram Explanation
+This sequence illustrates the submission of a new review. Because the business rules state that each review is associated with both a specific `Place` **and** a specific `User`, the Business Logic Layer validates both relationships against the Database — first confirming the reviewing `User` exists, then confirming the target `Place` exists — before the review is persisted. Only once both checks succeed is the review saved and a `HTTP 201 Created` response returned.
+
+---
+
 ### 2.4 Fetching a List of Places Flow
 
 ```mermaid
 sequenceDiagram
     actor User
     participant API
-    participant BusinessLogic as Business Logic
+    participant BusinessLogic as Business Logic Layer (Facade)
     participant Database
 
     User->>API: GET /places?criteria=...
@@ -201,7 +222,11 @@ sequenceDiagram
 ```
 
 ### Diagram Explanation
-This sequence illustrates how a user retrieves a list of places based on specific search criteria (e.g., location, price, amenities). The request flows from the User through the API to the Business Logic, which queries the Database. The Database returns the matching records, which are then formatted and sent back to the User along with a successful HTTP 200 OK response.
-Message Types (UML):
- Synchronous Message (⁠->>⁠): Represents the request flowing downward (from User to Database) to fetch the data based on the provided parameters.
- Return Message (⁠-->>⁠): Represents the data payload (the list of places) traveling back up the layers to be presented to the user.
+This sequence illustrates how a user retrieves a list of places based on specific search criteria (e.g., location, price, amenities). The request flows from the User through the API to the Business Logic Layer, which queries the Database. The Database returns the matching records, which are then formatted and sent back to the User along with a successful HTTP 200 OK response.
+
+---
+
+### Message Types (UML)
+These conventions apply consistently across all four sequence diagrams above:
+* **Synchronous Message (`->>`):** Represents a blocking request flowing downward through the layers (User → API → Business Logic Layer → Database) — each layer waits for a response before proceeding.
+* **Return Message (`-->>`):** Represents the response or data payload traveling back up through the layers to be presented to the User.
