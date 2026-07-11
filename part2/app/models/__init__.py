@@ -17,7 +17,7 @@ class BaseModel:
         """Placeholder for deleting the object from storage"""
         pass
 
-        """Import child models to avoid circular dependencies"""
+# Import child models to avoid circular dependencies
 from app.models.user import User
 from app.models.amenity import Amenity
 from app.models.place import Place
