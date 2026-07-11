@@ -22,3 +22,18 @@ class User(BaseModel):
         self.last_name = last_name.strip()
         self.email = email.strip()
         self.is_admin = is_admin
+
+        def register(self):
+        """Registers the user in the system."""
+            self.save()
+            return f"User {self.email} registered successfully."
+       
+       def update_profile(self, data : dict):
+       """Updates the user's profile with a given dictionary of new data."""    
+           self.update(data)
+       
+       @classmethod
+        def list(cls):
+        """Class method to retrieve all users."""
+            return []
+
