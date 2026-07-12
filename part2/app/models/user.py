@@ -30,8 +30,10 @@ class User(BaseModel):
         return f"User {self.email} registered successfully."
        
     def update_profile(self, data : dict):
-       """Updates the user's profile with a given dictionary of new data."""    
-        self.update(data)
+       """Updates the user's profile with a given dictionary of new data."""
+       self.update(data)
+           
+    
        
     @classmethod
     def list(cls):
