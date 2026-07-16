@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 from app.models import BaseModel
 
 class User(BaseModel):
