@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from app.models import BaseModel
+from app.models.base_model import BaseModel
 
 class Review(BaseModel):
     def __init__(self, text, rating, user_id, place_id):

@@ -24,7 +24,7 @@ class AmenityList(Resource):
         try:
             new_amenity = facade.create_amenity(amenity_data)
             return new_amenity.to_dict(), 201
-        except ValueError as e:
+        except (ValueError, TypeError) as e:
             return {'error': str(e)}, 400
 
 @api.route('/<amenity_id>')
