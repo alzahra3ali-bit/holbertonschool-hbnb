@@ -18,3 +18,11 @@ This directory contains the Part 2 portion of the Holberton HBNB project. Below 
 
 Use this README as a quick map to the project structure; open the files inside each folder for implementation details.
 
+Swagger documentation is now available through the Flask-RESTX UI.
+
+- Open http://127.0.0.1:5000/docs to view the interactive Swagger documentation.
+- The OpenAPI spec is available at http://127.0.0.1:5000/swagger.json.
+- Run the app with: python run.py
+
+For testing details, including the automated Swagger and API endpoint checks, see [TESTING.md](TESTING.md).
+

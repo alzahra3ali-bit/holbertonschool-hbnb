@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 from app.models import BaseModel
 
 class User(BaseModel):
@@ -12,7 +11,7 @@ class User(BaseModel):
             raise ValueError('First name is required')
         if not last_name or len(last_name.strip()) == 0:
             raise ValueError('Last name is required')
-        if not email or '@' not in email:
+        if not email or '@' not in email or '.' not in email.split('@', 1)[1]:
             raise ValueError('Invalid email address')
 
         """Attribute Assignment,
