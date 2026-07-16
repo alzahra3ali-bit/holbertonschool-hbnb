@@ -1,7 +1,7 @@
-from app.models import BaseModel
+from app.models.base_model import BaseModel
 
 class User(BaseModel):
-    def __init__(self, first_name, last_name, email, password, is_admin=False):
+    def __init__(self, first_name, last_name, email, password_hash, is_admin=False):
         
         """Call the attributes from parent class"""
         super().__init__()
@@ -21,7 +21,7 @@ class User(BaseModel):
         self.last_name = last_name.strip()
         self.email = email.strip()
         self.is_admin = is_admin
-        self.password = password.strip()
+        self.password = password_hash.strip()
 
     def register(self):
         """Registers the user in the system."""

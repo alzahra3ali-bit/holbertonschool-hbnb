@@ -6,7 +6,7 @@ class Amenity(BaseModel):
     Inherits from BaseModel.
     """
 
-    def __init__(self, name=""):
+    def __init__(self, name):
         super().__init__()
         self.name = name
 
@@ -22,4 +22,4 @@ class Amenity(BaseModel):
             raise ValueError("Name cannot be empty")
         if len(value) > 50:
             raise ValueError("Name cannot exceed 50 characters")
-        self._name = value
+        self._name = value.strip()
