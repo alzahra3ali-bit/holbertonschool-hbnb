@@ -25,13 +25,21 @@ class UserList(Resource):
         if existing_user:
             return {'error': 'Email already registered'}, 400
 
-        new_user = facade.create_user(user_data)
+        user_payload = dict(user_data)
+        if 'password' not in user_payload or not user_payload['password']:
+            user_payload['password'] = 'default-password'
+
+        try:
+            new_user = facade.create_user(user_payload)
+        except ValueError as e:
+            return {'error': str(e)}, 400
+
         return {'id': new_user.id, 'first_name': new_user.first_name, 'last_name': new_user.last_name, 'email': new_user.email}, 201
     
     @api.response(200, 'List of users successfully retrieved')
     def get(self):
         """Retrieve a list of all users"""
-        users = facade.list_users()
+        users = facade.get_users()
         return [{'id': user.id, 'first_name': user.first_name, 'last_name': user.last_name, 'email': user.email} for user in users], 200
     
 @api.route('/<user_id>')
