@@ -21,7 +21,7 @@ class Review(BaseModel):
         self.user_id = user_id.strip()
         self.place_id = place_id.strip()
         self.rating = rating
-    
+
     def create(self):
         """Creates and saves the review instance."""
         self.save()
@@ -32,12 +32,8 @@ class Review(BaseModel):
         if 'rating' in data and (not isinstance(data['rating'],(int, float)) or not 0 <= data[rating] <= 5):
             raise ValueError('Rating must be a number between 0 and 5')
         self.update(data)
-    
+
     @classmethod
     def list(cls):
-        """Class method to retrieve all reviews.""" 
+        """Class method to retrieve all reviews."""
         return []
-        
-
-
-        
