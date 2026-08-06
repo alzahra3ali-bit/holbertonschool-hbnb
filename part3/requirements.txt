@@ -1,2 +1,8 @@
 flask
+<<<<<<< HEAD
 flask-restx
+=======
+flask-restx
+flask-bcrypt
+flask-jwt-extended
+>>>>>>> 79c8a994356ac45caeae564088e16f54114a8726
