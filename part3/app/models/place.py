@@ -6,7 +6,11 @@ class Place(BaseModel):
     Inherits from BaseModel.
     """
 
+<<<<<<< HEAD
     def __init__(self, title, description, price, latitude, longitude, owner_id):
+=======
+    def __init__(self, title, price, latitude, longitude, owner_id, description=""):
+>>>>>>> 79c8a994356ac45caeae564088e16f54114a8726
         super().__init__()
         self.title = title
         self.description = description
@@ -15,6 +19,10 @@ class Place(BaseModel):
         self.longitude = longitude
         self.owner_id = owner_id
         self.amenity_ids = []
+<<<<<<< HEAD
+=======
+        self.reviews = []
+>>>>>>> 79c8a994356ac45caeae564088e16f54114a8726
 
     # --- Title Validation ---
     @property
@@ -101,3 +109,35 @@ class Place(BaseModel):
             raise TypeError("Amenity ID must be a string")
         if amenity_id not in self.amenity_ids:
             self.amenity_ids.append(amenity_id)
+<<<<<<< HEAD
+=======
+
+    # --- Methods to manage Reviews ---
+    def add_review(self, review):
+        """Adds a review to the place."""
+        self.reviews.append(review)
+
+    def delete_review(self, review):
+        """Removes a review from the place."""
+        if review in self.reviews:
+            self.reviews.remove(review)
+
+    def to_dict(self):
+        """Brief dictionary representation of the place."""
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'price': self.price,
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'owner_id': self.owner_id,
+        }
+
+    def to_dict_list(self):
+        """Detailed dictionary representation, including amenities and reviews."""
+        data = self.to_dict()
+        data['amenities'] = list(self.amenity_ids)
+        data['reviews'] = [review.to_dict() for review in self.reviews]
+        return data
+>>>>>>> 79c8a994356ac45caeae564088e16f54114a8726

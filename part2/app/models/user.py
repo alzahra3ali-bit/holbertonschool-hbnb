@@ -2,7 +2,7 @@ from app.models import BaseModel
 
 class User(BaseModel):
     def __init__(self, first_name, last_name, email, password, is_admin=False):
-        
+
         """Call the attributes from parent class"""
         super().__init__()
 
@@ -27,13 +27,13 @@ class User(BaseModel):
         """Registers the user in the system."""
         self.save()
         return f"User {self.email} registered successfully."
-       
+
     def update_profile(self, data : dict):
        """Updates the user's profile with a given dictionary of new data."""
        self.update(data)
-           
-    
-       
+
+
+
     @classmethod
     def list(cls):
         """Class method to retrieve all users."""

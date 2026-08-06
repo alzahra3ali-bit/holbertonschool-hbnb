@@ -59,7 +59,7 @@ class ReviewResource(Resource):
         review = facade.get_review(review_id)
         if not review:
             return {'error': 'Review not found'}, 404
-        
+
         try:
             facade.update_review(review_id, review_data)
             return {'message': 'Review updated successfully'}, 200
@@ -73,7 +73,7 @@ class ReviewResource(Resource):
         review = facade.get_review(review_id)
         if not review:
             return {'error': 'Review not found'}, 404
-        
+
         try:
             facade.delete_review(review_id)
             return {'message': 'Review deleted successfully'}, 200
