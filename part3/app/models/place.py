@@ -1,6 +1,14 @@
 from app.models.basemodel import BaseModel
+from app import db
 
 class Place(BaseModel):
+    _tablename_ = 'places'
+
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    price = db.Column(db.Float, nullable=False)
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
     """
     Place class that represents a property/listing.
     Inherits from BaseModel.
