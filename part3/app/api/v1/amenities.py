@@ -26,8 +26,6 @@ class AmenityList(Resource):
         if not get_jwt().get('is_admin', False):
             return {'error': 'Admin privileges required'}, 403
 
-    def post(self):
-        """Register a new amenity"""
         amenity_data = api.payload
         try:
             new_amenity = facade.create_amenity(amenity_data)
@@ -56,8 +54,6 @@ class AmenityResource(Resource):
         if not get_jwt().get('is_admin', False):
             return {'error': 'Admin privileges required'}, 403
 
-    def put(self, amenity_id):
-        """Update an amenity's information"""
         amenity_data = api.payload
         try:
             updated_amenity = facade.update_amenity(amenity_id, amenity_data)

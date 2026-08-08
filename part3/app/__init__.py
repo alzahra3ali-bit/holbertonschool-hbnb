@@ -17,19 +17,14 @@ from app.api.v1.reviews import api as reviews_ns
 from app.api.v1.auth import api as auth_ns
 
 
-def create_app(config_class="config.DevelopmentConfig"):
-    app = Flask(__name__)
-    app.config.from_object(config_class)
-    jwt.init_app(app)
-    bcrypt.init_app(app)
-
 def create_app(config_class=config.DevelopmentConfig):
     app = Flask(__name__)
     app.config.from_object(config_class)
-    
+
     db.init_app(app)
+    jwt.init_app(app)
     bcrypt.init_app(app)
-    
+
     api = Api(
         app,
         version='1.0',
@@ -44,9 +39,8 @@ def create_app(config_class=config.DevelopmentConfig):
     api.add_namespace(reviews_ns, path='/api/v1/reviews/')
     api.add_namespace(auth_ns, path='/api/v1/auth/')
 
+    @app.route('/')
     def index():
         return redirect('/docs')
-
-    app.view_functions['root'] = index
 
     return app

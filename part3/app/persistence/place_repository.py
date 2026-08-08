@@ -1,4 +1,4 @@
-from models.place import Place
+from app.models.place import Place
 from app import db
 from app.persistence.repository import SQLAlchemyRepository
 

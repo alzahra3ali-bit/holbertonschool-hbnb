@@ -1,29 +1,26 @@
 from app.models.basemodel import BaseModel
 from app import db
+from sqlalchemy.orm import validates
 
 
 class Amenity(BaseModel):
     __tablename__ = 'amenities'
-    
+
     name = db.Column(db.String(50), nullable=False)
 
     def __init__(self, name=""):
         super().__init__()
         self.name = name
 
-    @property
-    def name(self):
-        return self._name
-
-    @name.setter
-    def name(self, value):
+    @validates('name')
+    def validate_name(self, key, value):
         if not isinstance(value, str):
             raise TypeError("Name must be a string")
         if not value.strip():
             raise ValueError("Name cannot be empty")
         if len(value) > 50:
             raise ValueError("Name cannot exceed 50 characters")
-        self._name = value
+        return value
 
     def to_dict(self):
         """Dictionary representation of the amenity."""

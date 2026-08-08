@@ -1,16 +1,17 @@
 import unittest
 
-from app import create_app
+from app import create_app, db
 from app.services import facade
 
 
 class ApiEndpointTestCase(unittest.TestCase):
     def setUp(self):
         self.app = create_app()
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        db.create_all()
         self.client = self.app.test_client()
 
-        # POST /api/v1/users/ is admin-only, so tests bootstrap an admin
-        # directly through the facade (bypassing the API) and log in.
         facade.create_user({
             'first_name': 'Admin',
             'last_name': 'Istrator',
@@ -24,6 +25,11 @@ class ApiEndpointTestCase(unittest.TestCase):
         })
         token = login.get_json()['access_token']
         self.admin_headers = {'Authorization': f'Bearer {token}'}
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        self.app_context.pop()
 
     def test_create_user_requires_authentication(self):
         payload = {
@@ -47,12 +53,6 @@ class ApiEndpointTestCase(unittest.TestCase):
         body = response.get_json()
         self.assertIn('id', body)
         self.assertNotIn('password', body)
-            'email': 'alsabtighaida@gmail.com'
-        }
-        response = self.client.post('/api/v1/users/', json=payload)
-        self.assertEqual(response.status_code, 201)
-        self.assertIn('first_name', response.get_json())
-        self.assertEqual(response.get_json()['first_name'], 'Ghaida')
 
     def test_create_user_with_invalid_email_returns_400(self):
         payload = {
@@ -62,9 +62,6 @@ class ApiEndpointTestCase(unittest.TestCase):
             'password': 'supersecret'
         }
         response = self.client.post('/api/v1/users/', json=payload, headers=self.admin_headers)
-            'email': 'bad-email'
-        }
-        response = self.client.post('/api/v1/users/', json=payload)
         self.assertEqual(response.status_code, 400)
         self.assertIn('error', response.get_json())
         self.assertEqual(response.get_json()['error'], 'Invalid email address')

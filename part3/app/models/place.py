@@ -1,25 +1,34 @@
 from app.models.basemodel import BaseModel
 from app import db
 
+place_amenity = db.Table(
+    'place_amenity',
+    db.Column('place_id', db.String(36), db.ForeignKey('places.id'), primary_key=True),
+    db.Column('amenity_id', db.String(36), db.ForeignKey('amenities.id'), primary_key=True)
+)
+
+
 class Place(BaseModel):
-    _tablename_ = 'places'
+    __tablename__ = 'places'
 
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=True)
     price = db.Column(db.Float, nullable=False)
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
+    owner_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
 
+    owner = db.relationship('User', backref='places')
+    amenities = db.relationship('Amenity', secondary=place_amenity, backref='places')
 
     def __init__(self, title, description, price, latitude, longitude, owner_id):
         super().__init__()
-        self.title = title
-        self.description = description
-        self.price = price
-        self.latitude = latitude
-        self.longitude = longitude
-        self.owner_id = owner_id
-        self.amenity_ids = []
+        self.title = self.validate_title(title)
+        self.description = self.validate_description(description) if description else description
+        self.price = self.validate_price(price)
+        self.latitude = self.validate_latitude(latitude)
+        self.longitude = self.validate_longitude(longitude)
+        self.owner_id = self.validate_owner_id(owner_id)
 
     def validate_title(self, title):
         if not isinstance(title, str):
@@ -63,8 +72,19 @@ class Place(BaseModel):
             raise ValueError("Owner ID cannot be empty")
         return owner_id
     
-    def add_amenity(self, amenity_id):
-        if not isinstance(amenity_id, str):
-            raise TypeError("Amenity ID must be a string")
-        if amenity_id not in self.amenity_ids:
-            self.amenity_ids.append(amenity_id)
+    def add_amenity(self, amenity):
+        if amenity not in self.amenities:
+            self.amenities.append(amenity)
+
+    def to_dict(self):
+        """Dictionary representation of the place."""
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'price': self.price,
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'owner_id': self.owner_id,
+            'amenities': [amenity.to_dict() for amenity in self.amenities]
+        }
