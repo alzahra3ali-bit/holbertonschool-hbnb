@@ -1,10 +1,11 @@
 from app.models.basemodel import BaseModel
+from app import db
+
 
 class Amenity(BaseModel):
-    """
-    Amenity class that represents a specific feature of a Place.
-    Inherits from BaseModel.
-    """
+    __tablename__ = 'amenities'
+    
+    name = db.Column(db.String(50), nullable=False)
 
     def __init__(self, name=""):
         super().__init__()

@@ -1,12 +1,17 @@
 from app.models.basemodel import BaseModel
+from app import db
 
 class Place(BaseModel):
-    """
-    Place class that represents a property/listing.
-    Inherits from BaseModel.
-    """
+    _tablename_ = 'places'
 
-    def __init__(self, title, price, latitude, longitude, owner_id, description=""):
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    price = db.Column(db.Float, nullable=False)
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+
+
+    def __init__(self, title, description, price, latitude, longitude, owner_id):
         super().__init__()
         self.title = title
         self.description = description
@@ -15,119 +20,51 @@ class Place(BaseModel):
         self.longitude = longitude
         self.owner_id = owner_id
         self.amenity_ids = []
-        self.reviews = []
 
-    # --- Title Validation ---
-    @property
-    def title(self):
-        return self._title
-
-    @title.setter
-    def title(self, value):
-        if not isinstance(value, str):
+    def validate_title(self, title):
+        if not isinstance(title, str):
             raise TypeError("Title must be a string")
-        if not value.strip():
+        if not title.strip():
             raise ValueError("Title cannot be empty")
-        if len(value) > 100:
+        if len(title) > 100:
             raise ValueError("Title cannot exceed 100 characters")
-        self._title = value
+        return title
 
-    # --- Description Validation ---
-    @property
-    def description(self):
-        return self._description
-
-    @description.setter
-    def description(self, value):
-        if not isinstance(value, str):
+    def validate_description(self, description):
+        if not isinstance(description, str):
             raise TypeError("Description must be a string")
-        self._description = value
+        return description
 
-    # --- Price Validation ---
-    @property
-    def price(self):
-        return self._price
-
-    @price.setter
-    def price(self, value):
-        if not isinstance(value, (int, float)):
+    def validate_price(self, price):
+        if not isinstance(price, (int, float)):
             raise TypeError("Price must be a number")
-        if value <= 0:
+        if price <= 0:
             raise ValueError("Price must be a positive value (greater than 0)")
-        self._price = float(value)
+        return float(price)
 
-    # --- Latitude Validation ---
-    @property
-    def latitude(self):
-        return self._latitude
-
-    @latitude.setter
-    def latitude(self, value):
-        if not isinstance(value, (int, float)):
+    def validate_latitude(self, latitude):
+        if not isinstance(latitude, (int, float)):
             raise TypeError("Latitude must be a number")
-        if not (-90.0 <= value <= 90.0):
+        if not (-90.0 <= latitude <= 90.0):
             raise ValueError("Latitude must be between -90.0 and 90.0")
-        self._latitude = float(value)
+        return float(latitude)
 
-    # --- Longitude Validation ---
-    @property
-    def longitude(self):
-        return self._longitude
-
-    @longitude.setter
-    def longitude(self, value):
-        if not isinstance(value, (int, float)):
+    def validate_longitude(self, longitude):
+        if not isinstance(longitude, (int, float)):
             raise TypeError("Longitude must be a number")
-        if not (-180.0 <= value <= 180.0):
+        if not (-180.0 <= longitude <= 180.0):
             raise ValueError("Longitude must be between -180.0 and 180.0")
-        self._longitude = float(value)
+        return float(longitude)
 
-    # --- Owner ID Validation ---
-    @property
-    def owner_id(self):
-        return self._owner_id
-
-    @owner_id.setter
-    def owner_id(self, value):
-        if not isinstance(value, str):
+    def validate_owner_id(self, owner_id):
+        if not isinstance(owner_id, str):
             raise TypeError("Owner ID must be a string")
-        if not value.strip():
+        if not owner_id.strip():
             raise ValueError("Owner ID cannot be empty")
-        self._owner_id = value
-
-    # --- Method to add an Amenity ---
+        return owner_id
+    
     def add_amenity(self, amenity_id):
-        """Adds an amenity ID to the place."""
         if not isinstance(amenity_id, str):
             raise TypeError("Amenity ID must be a string")
         if amenity_id not in self.amenity_ids:
             self.amenity_ids.append(amenity_id)
-
-    # --- Methods to manage Reviews ---
-    def add_review(self, review):
-        """Adds a review to the place."""
-        self.reviews.append(review)
-
-    def delete_review(self, review):
-        """Removes a review from the place."""
-        if review in self.reviews:
-            self.reviews.remove(review)
-
-    def to_dict(self):
-        """Brief dictionary representation of the place."""
-        return {
-            'id': self.id,
-            'title': self.title,
-            'description': self.description,
-            'price': self.price,
-            'latitude': self.latitude,
-            'longitude': self.longitude,
-            'owner_id': self.owner_id,
-        }
-
-    def to_dict_list(self):
-        """Detailed dictionary representation, including amenities and reviews."""
-        data = self.to_dict()
-        data['amenities'] = list(self.amenity_ids)
-        data['reviews'] = [review.to_dict() for review in self.reviews]
-        return data

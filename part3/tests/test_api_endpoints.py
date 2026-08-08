@@ -47,6 +47,12 @@ class ApiEndpointTestCase(unittest.TestCase):
         body = response.get_json()
         self.assertIn('id', body)
         self.assertNotIn('password', body)
+            'email': 'alsabtighaida@gmail.com'
+        }
+        response = self.client.post('/api/v1/users/', json=payload)
+        self.assertEqual(response.status_code, 201)
+        self.assertIn('first_name', response.get_json())
+        self.assertEqual(response.get_json()['first_name'], 'Ghaida')
 
     def test_create_user_with_invalid_email_returns_400(self):
         payload = {
@@ -56,6 +62,9 @@ class ApiEndpointTestCase(unittest.TestCase):
             'password': 'supersecret'
         }
         response = self.client.post('/api/v1/users/', json=payload, headers=self.admin_headers)
+            'email': 'bad-email'
+        }
+        response = self.client.post('/api/v1/users/', json=payload)
         self.assertEqual(response.status_code, 400)
         self.assertIn('error', response.get_json())
         self.assertEqual(response.get_json()['error'], 'Invalid email address')
