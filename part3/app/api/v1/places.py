@@ -1,4 +1,5 @@
 from flask_restx import Namespace, Resource, fields
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app.services import facade
 
 api = Namespace('places', description='Place operations')
@@ -16,19 +17,43 @@ user_model = api.model('PlaceUser', {
     'email': fields.String(description='Email of the owner')
 })
 
-# Define the place model for input validation and documentation
+
 place_model = api.model('Place', {
     'title': fields.String(required=True, description='Title of the place'),
     'description': fields.String(description='Description of the place'),
     'price': fields.Float(required=True, description='Price per night'),
     'latitude': fields.Float(required=True, description='Latitude of the place'),
     'longitude': fields.Float(required=True, description='Longitude of the place'),
+    'amenities': fields.List(fields.String, description="List of amenities ID's")
+})
+
+
+place_update_model = api.model('PlaceUpdate', {
+    'title': fields.String(description='Title of the place'),
+    'description': fields.String(description='Description of the place'),
+    'price': fields.Float(description='Price per night'),
+    'latitude': fields.Float(description='Latitude of the place'),
+    'longitude': fields.Float(description='Longitude of the place')
     'owner_id': fields.String(required=True, description='ID of the owner'),
     'amenities': fields.List(fields.String, required=True, description="List of amenities ID's")
 })
 
 @api.route('/')
 class PlaceList(Resource):
+    @api.expect(place_model, validate=True)
+    @api.response(201, 'Place successfully created')
+    @api.response(400, 'Invalid input data')
+    @jwt_required()
+    def post(self):
+        """Create a new place"""
+        current_user = get_jwt_identity()
+        place_data = dict(api.payload)
+        place_data['owner_id'] = current_user
+
+        try:
+            new_place = facade.create_place(place_data)
+            return new_place.to_dict(), 201
+        except (ValueError, TypeError, KeyError) as e:
     @api.expect(place_model)
     @api.response(201, 'Place successfully created')
     @api.response(400, 'Invalid input data')
@@ -66,6 +91,27 @@ class PlaceResource(Resource):
             return {'error': 'Place not found'}, 404
         return place.to_dict_list(), 200
 
+    @api.expect(place_update_model, validate=True)
+    @api.response(200, 'Place updated successfully')
+    @api.response(404, 'Place not found')
+    @api.response(403, 'Unauthorized action')
+    @api.response(400, 'Invalid input data')
+    @jwt_required()
+    def put(self, place_id):
+        """Update a place's information"""
+        current_user = get_jwt_identity()
+        is_admin = get_jwt().get('is_admin', False)
+        place = facade.get_place(place_id)
+        if not place:
+            return {'error': 'Place not found'}, 404
+        if not is_admin and place.owner_id != current_user:
+            return {'error': 'Unauthorized action'}, 403
+
+        place_data = api.payload
+        try:
+            facade.update_place(place_id, place_data)
+            return {'message': 'Place updated successfully'}, 200
+        except (ValueError, TypeError) as e:
     @api.expect(place_model)
     @api.response(200, 'Place updated successfully')
     @api.response(404, 'Place not found')
@@ -92,6 +138,11 @@ class PlaceAmenities(Resource):
         amenities_data = api.payload
         if not amenities_data or len(amenities_data) == 0:
             return {'error': 'Invalid input data'}, 400
+
+        place = facade.get_place(place_id)
+        if not place:
+            return {'error': 'Place not found'}, 404
+
         
         place = facade.get_place(place_id)
         if not place:
@@ -101,6 +152,9 @@ class PlaceAmenities(Resource):
             a = facade.get_amenity(amenity['id'])
             if not a:
                 return {'error': 'Invalid input data'}, 400
+
+        for amenity in amenities_data:
+            place.add_amenity(amenity['id'])
         
         for amenity in amenities_data:
             place.add_amenity(amenity)

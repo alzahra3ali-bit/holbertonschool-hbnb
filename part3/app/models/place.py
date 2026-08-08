@@ -9,10 +9,7 @@ class Place(BaseModel):
     price = db.Column(db.Float, nullable=False)
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
-    """
-    Place class that represents a property/listing.
-    Inherits from BaseModel.
-    """
+
 
     def __init__(self, title, description, price, latitude, longitude, owner_id):
         super().__init__()
@@ -24,87 +21,49 @@ class Place(BaseModel):
         self.owner_id = owner_id
         self.amenity_ids = []
 
-    # --- Title Validation ---
-    @property
-    def title(self):
-        return self._title
-
-    @title.setter
-    def title(self, value):
-        if not isinstance(value, str):
+    def validate_title(self, title):
+        if not isinstance(title, str):
             raise TypeError("Title must be a string")
-        if not value.strip():
+        if not title.strip():
             raise ValueError("Title cannot be empty")
-        if len(value) > 100:
+        if len(title) > 100:
             raise ValueError("Title cannot exceed 100 characters")
-        self._title = value
+        return title
 
-    # --- Description Validation ---
-    @property
-    def description(self):
-        return self._description
-
-    @description.setter
-    def description(self, value):
-        if not isinstance(value, str):
+    def validate_description(self, description):
+        if not isinstance(description, str):
             raise TypeError("Description must be a string")
-        self._description = value
+        return description
 
-    # --- Price Validation ---
-    @property
-    def price(self):
-        return self._price
-
-    @price.setter
-    def price(self, value):
-        if not isinstance(value, (int, float)):
+    def validate_price(self, price):
+        if not isinstance(price, (int, float)):
             raise TypeError("Price must be a number")
-        if value <= 0:
+        if price <= 0:
             raise ValueError("Price must be a positive value (greater than 0)")
-        self._price = float(value)
+        return float(price)
 
-    # --- Latitude Validation ---
-    @property
-    def latitude(self):
-        return self._latitude
-
-    @latitude.setter
-    def latitude(self, value):
-        if not isinstance(value, (int, float)):
+    def validate_latitude(self, latitude):
+        if not isinstance(latitude, (int, float)):
             raise TypeError("Latitude must be a number")
-        if not (-90.0 <= value <= 90.0):
+        if not (-90.0 <= latitude <= 90.0):
             raise ValueError("Latitude must be between -90.0 and 90.0")
-        self._latitude = float(value)
+        return float(latitude)
 
-    # --- Longitude Validation ---
-    @property
-    def longitude(self):
-        return self._longitude
-
-    @longitude.setter
-    def longitude(self, value):
-        if not isinstance(value, (int, float)):
+    def validate_longitude(self, longitude):
+        if not isinstance(longitude, (int, float)):
             raise TypeError("Longitude must be a number")
-        if not (-180.0 <= value <= 180.0):
+        if not (-180.0 <= longitude <= 180.0):
             raise ValueError("Longitude must be between -180.0 and 180.0")
-        self._longitude = float(value)
+        return float(longitude)
 
-    # --- Owner ID Validation ---
-    @property
-    def owner_id(self):
-        return self._owner_id
-
-    @owner_id.setter
-    def owner_id(self, value):
-        if not isinstance(value, str):
+    def validate_owner_id(self, owner_id):
+        if not isinstance(owner_id, str):
             raise TypeError("Owner ID must be a string")
-        if not value.strip():
+        if not owner_id.strip():
             raise ValueError("Owner ID cannot be empty")
-        self._owner_id = value
-
-    # --- Method to add an Amenity ---
+        return owner_id
+    
     def add_amenity(self, amenity_id):
-        """Adds an amenity ID to the place."""
         if not isinstance(amenity_id, str):
             raise TypeError("Amenity ID must be a string")
         if amenity_id not in self.amenity_ids:

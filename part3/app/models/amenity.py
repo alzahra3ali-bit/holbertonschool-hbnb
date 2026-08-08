@@ -7,12 +7,6 @@ class Amenity(BaseModel):
     
     name = db.Column(db.String(50), nullable=False)
 
-    
-    """
-    Amenity class that represents a specific feature of a Place.
-    Inherits from BaseModel.
-    """
-
     def __init__(self, name=""):
         super().__init__()
         self.name = name
@@ -30,3 +24,10 @@ class Amenity(BaseModel):
         if len(value) > 50:
             raise ValueError("Name cannot exceed 50 characters")
         self._name = value
+
+    def to_dict(self):
+        """Dictionary representation of the amenity."""
+        return {
+            'id': self.id,
+            'name': self.name,
+        }

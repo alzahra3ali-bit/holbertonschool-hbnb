@@ -61,24 +61,6 @@ class SQLAlchemyRepository(Repository):
     def get_by_attribute(self, attr_name, attr_value):
         return self.model.query.filter_by(**{attr_name: attr_value}).first()
 
-class UserRepository(SQLAlchemyRepository):
-    def __init__(self):
-        super().__init__(User)
-
-    def get_user_by_email(self, email):
-        return self.get_by_attribute('email', email)
-class PlaceRepository(SQLAlchemyRepository):
-    def __init__(self):
-        super().__init__(Place)
-
-class ReviewRepository(SQLAlchemyRepository):
-    def __init__(self):
-        super().__init__(Review)
-
-class AmenityRepository(SQLAlchemyRepository):
-    def __init__(self):
-        super().__init__(Amenity)
-
 
 """
 class InMemoryRepository(Repository):
@@ -97,6 +79,7 @@ class InMemoryRepository(Repository):
     def update(self, obj_id, data):
         obj = self.get(obj_id)
         if obj:
+            obj.update(data)
             for key, value in data.items():
                 setattr(obj, key, value)
 
@@ -105,6 +88,7 @@ class InMemoryRepository(Repository):
             del self._storage[obj_id]
 
     def get_by_attribute(self, attr_name, attr_value):
+        return next((obj for obj in self._storage.values() if getattr(obj, attr_name) == attr_value), None)
         for obj in self._storage.values():
             if getattr(obj, attr_name) == attr_value:
                 return obj
