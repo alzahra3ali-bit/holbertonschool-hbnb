@@ -1,5 +1,7 @@
 from app import db, bcrypt
 from app.models.basemodel import BaseModel
+from sqlalchemy.orm import validates
+
 
 class User(BaseModel):
     __tablename__ = 'users'
@@ -17,3 +19,16 @@ class User(BaseModel):
     def verify_password(self, plain_password):
         """Verifies a plain password against the hashed one."""
         return bcrypt.check_password_hash(self.password, plain_password)
+    
+    @validates('email')
+    def validate_email(self, key, email):
+        if not email or '@' not in email or '.' not in email.split('@', 1)[1]:
+            raise ValueError('Invalid email address')
+        return email.strip()
+
+    @validates('first_name', 'last_name')
+    def validate_name(self, key, name):
+        if not name or len(name.strip()) == 0:
+            raise ValueError(f'{key.replace("_", " ").capitalize()} is required')
+        return name.strip()
+    
