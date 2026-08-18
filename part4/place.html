@@ -1,1 +1,57 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Place Details</title>
+    <link rel="icon" href="images/icon.png" type="image/png">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+        <img src="images/logo.png" alt="HBnB logo" class="logo">
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="login.html" id="login-link" class="login-button">Login</a>
+        </nav>
+    </header>
+    <main>
+        <section id="place-details" class="place-details">
+          <div class="place-info">
+                <h1>Cozy Beach Cottage</h1>
+                <p><strong>Host:</strong> Jane Doe</p>
+                <p><strong>Price per night:</strong> $120</p>
+                <p><strong>Description:</strong> A beautiful cottage near the shore with fantastic ocean views.</p>
+                <p><strong>Amenities:</strong> Wi-Fi, Air Conditioning, Kitchen, Free Parking</p>
+            </div>
+        </section>
+        <section id="reviews">
+            <h2>Reviews</h2>
+            <article class="review-card">
+                <p>Loved staying here! Extremely peaceful and clean.</p>
+                <p><strong>User:</strong> Alex Smith</p>
+                <p><strong>Rating:</strong> 5/5</p>
+            </article>
+        </section>
+        <section id="add-review">
+            <h2>Add a Review</h2>
+            <article class="review-card">
+                <p>Loved staying here! Extremely peaceful and clean.</p>
+                <p><strong>User:</strong> Alex Smith</p>
+                <p><strong>Rating:</strong> 5/5</p>
+            </article>
+            <form id="review-form">
+                <label for="review-text">Review:</label>
+                <textarea id="review-text" name="review-text" required></textarea>
+                
+                <button type="submit">Submit</button>
+            </form>
+          
+        </section>
+      <section id="add-review">
+            <a href="add_review.html" class="details-button">Add Review</a>
+        </section>
+    </main>
+    <script src="scripts.js"></script>
+</body>
+</html>
