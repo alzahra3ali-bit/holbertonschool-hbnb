@@ -1,16 +1,14 @@
-const API_BASE = 'http://127.0.0.1:5000/api/v1';
-
 document.addEventListener('DOMContentLoaded', () => {
+    const API_BASE = 'http://localhost:5000/api/v1';
     const token = getCookie('token');
 
     const addReviewSection = document.getElementById('add-review-button');
     if (addReviewSection) {
-        addReviewSection.style.display = token ? 'block' : 'none';
-    }
-
-    const loginLink = document.getElementById('login-link');
-    if (loginLink) {
-        loginLink.style.display = token ? 'none' : 'block';
+        if (!token) {
+            addReviewSection.style.display = 'none';
+        } else {
+            addReviewSection.style.display = 'block';
+        }
     }
 
     const loginForm = document.getElementById('login-form');
@@ -18,6 +16,97 @@ document.addEventListener('DOMContentLoaded', () => {
         loginForm.addEventListener('submit', async (event) => {
             event.preventDefault();
 
+      async function loginUser(email, password) {
+      const response = await fetch('http://127.0.0.1:5000/api/v1/auth/login', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password })
+      });
+        if (response.ok) {
+            const data = await response.json();
+            document.cookie = `token=${data.access_token}; path=/`; //store the token in a cookie
+            window.location.href = 'index.html';
+        } else {
+      alert('Login failed: ' + response.statusText);
+  }
+  }
+
+   function checkAuthentication() {
+      const token = getCookie('token');
+      const loginLink = document.getElementById('login-link');
+
+      if (!token) {
+          loginLink.style.display = 'block';
+      } else {
+          loginLink.style.display = 'none';
+          // Fetch places data if the user is authenticated
+          fetchPlaces(token);
+      }
+  }
+  function getCookie(name) {
+      // Function to get a cookie value by its name
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + "=")) {
+            return cookie.substring(name.length + 1); //skip equal sign
+        }
+      }
+      return null;
+  }
+
+    async function fetchPlaces(token) {
+      // Make a GET request to fetch places data
+      const response = await fetch('http://127.0.0.1:5000/api/v1/places', {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}` // Include the token in the Authorization header
+        }
+        });
+
+        if (!response.ok) {
+			throw new Error('Error fetching places.');
+		}
+
+        const places = await response.json();
+		displayPlaces(places); // Handle the response and pass the data to displayPlaces function
+
+        function displayPlaces(places) {
+            const placesList = document.getElementById('places-list');
+            if (!placesList) {
+                return;
+            }
+
+            placesList.innerHTML = ''; // Clear the current content of the places list
+
+            // Iterate over the places data
+            places.forEach(place => {
+			const placeDiv = document.createElement('div'); // For each place, create a div element and set its content
+			placeDiv.classList.add('place');
+			placesList.appendChild(placeDiv); // Append the created element to the places list
+			placeDiv.dataset.price = place.price;
+		    });
+
+            document.getElementById('price-filter').addEventListener('change', (event) => {
+                // Get the selected price value
+                const selectedPrice = parseFloat(event.target.value);
+
+                // Iterate over the places and show/hide them based on the selected price
+                const placeElements = document.querySelectorAll('.place');
+                placeElements.forEach(place => {
+                const placePrice = parseFloat(place.dataset.price);
+                if (isNaN(selectedPrice) || placePrice <= selectedPrice) {
+                    place.style.display = 'block';
+                } else {
+                    place.style.display = 'none';
+                }
+                });
+            });
+
+        }
+  }
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
@@ -28,29 +117,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-    if (document.getElementById('places-list')) {
-        fetchPlaces(token);
-    }
-
-    if (document.getElementById('place-details')) {
-        initPlaceDetailsPage();
-    }
-
-    if (document.getElementById('review-form')) {
-        initAddReviewPage();
-    }
 });
 
-function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return null;
-}
-
 async function loginUser(email, password) {
-    const response = await fetch(`${API_BASE}/auth/login`, {
+    const response = await fetch('http://127.0.0.1:5000/api/v1/auth/login', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -67,53 +137,11 @@ async function loginUser(email, password) {
     }
 }
 
-async function fetchPlaces(token) {
-    const response = await fetch(`${API_BASE}/places`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
-
-    if (!response.ok) {
-        throw new Error('Error fetching places.');
-    }
-
-    const places = await response.json();
-    displayPlaces(places);
-}
-
-function displayPlaces(places) {
-    const placesList = document.getElementById('places-list');
-    if (!placesList) {
-        return;
-    }
-
-    placesList.innerHTML = '';
-
-    places.forEach(place => {
-        const placeDiv = document.createElement('div');
-        placeDiv.classList.add('place');
-        placesList.appendChild(placeDiv);
-        placeDiv.dataset.price = place.price;
-    });
-
-    const priceFilter = document.getElementById('price-filter');
-    if (priceFilter) {
-        priceFilter.addEventListener('change', (event) => {
-            const selectedPrice = parseFloat(event.target.value);
-
-            const placeElements = document.querySelectorAll('.place');
-            placeElements.forEach(place => {
-                const placePrice = parseFloat(place.dataset.price);
-                if (isNaN(selectedPrice) || placePrice <= selectedPrice) {
-                    place.style.display = 'block';
-                } else {
-                    place.style.display = 'none';
-                }
-            });
-        });
-    }
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
 }
 
 function getPlaceIdFromURL() {
